@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>OS #{{ agendamento.pk|stringformat:"04d" }} — Motorista</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #b8935a; --gold-pale: #f5efe6;
+      --ink: #2a2420; --muted: #7a6e68; --line: #e0d5c8;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: #e8e0d8; padding: 2rem 1rem; }
+    .page { background: white; max-width: 780px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+
+    .header { padding: 1.5rem 2rem; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
+    .company h1 { font-size: 1.2rem; color: var(--ink); }
+    .company p { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+    .doc-info { text-align: right; }
+    .doc-info h2 { font-size: 1rem; color: var(--ink); }
+    .doc-info .os-num { font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+
+    .service-bar { background: var(--gold); padding: .5rem 2rem; display: flex; justify-content: space-between; }
+    .service-bar span { color: white; font-size: .85rem; font-weight: 600; }
+
+    .body { padding: 1.5rem 2rem; }
+
+    .section-title {
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--gold); margin: 1.2rem 0 .6rem; border-bottom: 1px solid var(--line); padding-bottom: .3rem;
+    }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; }
+    .field { background: var(--gold-pale); border-radius: 4px; padding: .5rem .8rem; }
+    .field label { font-size: .6rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: block; margin-bottom: .2rem; }
+    .field span { font-size: .88rem; color: var(--ink); font-weight: 500; }
+    .field-full { grid-column: 1 / -1; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: .3rem; }
+    th { background: var(--gold-pale); padding: .45rem .8rem; text-align: left; font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; color: var(--gold); border-bottom: 1px solid var(--line); }
+    td { padding: .5rem .8rem; font-size: .82rem; color: var(--ink); border-bottom: 1px solid var(--line); }
+    tr:last-child td { border-bottom: none; }
+
+    .badge { display: inline-block; font-size: .65rem; padding: .1rem .4rem; border-radius: 3px; }
+    .adulto { background: #e8f4e8; color: #2a6e2a; }
+    .adolescente { background: #fff3e0; color: #8a5a00; }
+    .crianca { background: #e8f0ff; color: #2a4a8a; }
+
+    .obs { background: var(--gold-pale); border-radius: 4px; padding: .8rem; font-size: .85rem; color: var(--ink); min-height: 60px; margin-top: .3rem; }
+
+    .sign-row { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    .sign-field { text-align: center; }
+    .sign-line { border-bottom: 1px solid var(--ink); height: 36px; margin-bottom: .4rem; }
+    .sign-label { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+    .footer { background: var(--gold-pale); border-top: 1px solid var(--line); padding: .6rem 2rem; display: flex; justify-content: space-between; }
+    .footer span { font-size: .65rem; color: var(--muted); }
+
+    .no-print { text-align: center; margin-bottom: 1rem; }
+    .no-print button { background: var(--gold); color: white; border: none; padding: .6rem 1.4rem; border-radius: 6px; font-size: .85rem; cursor: pointer; margin: 0 .3rem; }
+    .no-print a { display: inline-block; background: #555; color: white; text-decoration: none; padding: .6rem 1.4rem; border-radius: 6px; font-size: .85rem; margin: 0 .3rem; }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .page { box-shadow: none; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  <a href="{% url 'agendamentos:lista' %}">← Voltar</a>
+</div>
+
+<div class="page">
+
+  <div class="header">
+    <div class="company">
+      <h1>{{ empresa.nome }}</h1>
+      <p>CNPJ: {{ empresa.cnpj }} · {{ empresa.cidade }}</p>
+      <p>{{ empresa.telefone }} · {{ empresa.email }}</p>
+    </div>
+    <div class="doc-info">
+      <h2>Ordem de Serviço</h2>
+      <div class="os-num">#{{ agendamento.pk|stringformat:"04d" }}</div>
+    </div>
+  </div>
+
+  <div class="service-bar">
+    <span>{{ agendamento.get_tipo_servico_display }}</span>
+    <span>{{ agendamento.data_hora|date:"d/m/Y H:i" }}</span>
+  </div>
+
+  <div class="body">
+
+    <div class="section-title">Informações do Serviço</div>
+    <div class="grid2">
+      <div class="field field-full">
+        <label>Cliente</label>
+        <span>{{ agendamento.cliente }}</span>
+      </div>
+      <div class="field">
+        <label>Telefone</label>
+        <span>{{ agendamento.cliente.telefone }}</span>
+      </div>
+      <div class="field">
+        <label>Código do Voo</label>
+        <span>{{ agendamento.codigo_voo|default:"—" }}</span>
+      </div>
+      <div class="field field-full">
+        <label>Embarque</label>
+        <span>{{ agendamento.endereco_embarque }}</span>
+      </div>
+      <div class="field field-full">
+        <label>Destino</label>
+        <span>{{ agendamento.destino }}</span>
+      </div>
+      <div class="field">
+        <label>Veículo</label>
+        <span>{{ agendamento.veiculo }}</span>
+      </div>
+      <div class="field">
+        <label>Motorista</label>
+        <span>{{ agendamento.motorista }}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Passageiros</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Tipo</th>
+          <th>Documento</th>
+          <th>Telefone</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in passageiros %}
+        <tr>
+          <td>{{ p.nome }}</td>
+          <td><span class="badge {{ p.tipo }}">{{ p.get_tipo_display }}</span></td>
+          <td>{{ p.documento|default:"—" }}</td>
+          <td>{{ p.telefone|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="color:var(--muted);text-align:center">Nenhum passageiro cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="section-title">Bagagem</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Despachadas</label>
+        <span>{{ agendamento.malas_despachadas }}</span>
+      </div>
+      <div class="field">
+        <label>Mão</label>
+        <span>{{ agendamento.malas_mao }}</span>
+      </div>
+      <div class="field">
+        <label>Reboque</label>
+        <span>{% if agendamento.reboque %}Sim{% else %}Não{% endif %}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Observações</div>
+    <div class="obs">{{ agendamento.observacoes|default:"Nenhuma observação." }}</div>
+
+    <div class="sign-row">
+      <div class="sign-field">
+        <div class="sign-line"></div>
+        <div class="sign-label">Assinatura do Cliente</div>
+      </div>
+      <div class="sign-field">
+        <div class="sign-line"></div>
+        <div class="sign-label">Assinatura do Motorista</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>{{ empresa.nome }} · {{ empresa.cnpj }}</span>
+    <span>OS #{{ agendamento.pk|stringformat:"04d" }} · {{ agendamento.data_hora|date:"d/m/Y" }}</span>
+  </div>
+
+</div>
+</body>
+</html>

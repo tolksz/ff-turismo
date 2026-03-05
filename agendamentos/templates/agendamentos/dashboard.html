@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard — F&F Turismo</title>
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+  <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #b8935a; --gold-pale: #f5efe6;
+      --ink: #2a2420; --muted: #7a6e68;
+      --line: #e0d5c8; --bg: #faf8f5;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: #e8e0d8; min-height: 100vh; }
+
+    .topbar {
+      background: var(--ink); padding: .9rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar h1 { color: var(--gold); font-size: 1.1rem; letter-spacing: .05em; }
+    .topbar nav a {
+      color: #ccc; text-decoration: none; font-size: .85rem;
+      margin-left: 1.5rem; transition: color .2s;
+    }
+    .topbar nav a:hover { color: var(--gold); }
+
+    .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .card {
+      background: white; border-radius: 8px; padding: 1.2rem 1.4rem;
+      border: 1px solid var(--line); border-left: 4px solid var(--gold);
+    }
+    .card-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .4rem; }
+    .card-value { font-size: 1.8rem; font-weight: 700; color: var(--ink); }
+    .card-sub { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+
+    .grid { display: grid; grid-template-columns: 1fr 340px; gap: 1.2rem; margin-bottom: 1.2rem; }
+
+    .panel { background: white; border-radius: 8px; border: 1px solid var(--line); overflow: hidden; }
+    .panel-header {
+      background: var(--gold-pale); padding: .7rem 1.2rem;
+      border-bottom: 1px solid var(--line);
+      font-size: .8rem; font-weight: 600; color: var(--ink);
+    }
+    .panel-body { padding: 1rem; }
+
+    #calendar { min-height: 480px; }
+    .fc .fc-toolbar-title { font-size: 1rem !important; color: var(--ink); }
+    .fc .fc-button { background: var(--gold) !important; border-color: var(--gold) !important; font-size: .8rem !important; }
+    .fc .fc-button:hover { background: #a07848 !important; }
+    .fc .fc-day-today { background: var(--gold-pale) !important; }
+
+    .prox-item {
+      padding: .7rem 0; border-bottom: 1px solid var(--line);
+      display: flex; flex-direction: column; gap: .2rem;
+    }
+    .prox-item:last-child { border-bottom: none; }
+    .prox-nome { font-size: .85rem; font-weight: 600; color: var(--ink); }
+    .prox-info { font-size: .75rem; color: var(--muted); }
+    .prox-data { font-size: .72rem; color: var(--gold); font-weight: 500; }
+
+    .badge { display: inline-block; font-size: .65rem; padding: .1rem .45rem; border-radius: 20px; font-weight: 500; }
+    .badge-pendente   { background: #fff3cd; color: #856404; }
+    .badge-confirmado { background: #d1e7dd; color: #0a5c36; }
+
+    .chart-wrap { padding: 1rem; height: 220px; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>F&F Viagens e Turismo</h1>
+  <nav>
+    <a href="{% url 'agendamentos:dashboard' %}">Dashboard</a>
+    <a href="{% url 'agendamentos:lista' %}">Agendamentos</a>
+    <a href="/admin/">Admin</a>
+  </nav>
+</div>
+
+<div class="container">
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Agendamentos Hoje</div>
+      <div class="card-value">{{ agendamentos_hoje }}</div>
+      <div class="card-sub">serviços previstos</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Faturamento Hoje</div>
+      <div class="card-value">R$ {{ total_hoje }}</div>
+      <div class="card-sub">valor total do dia</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Agendamentos Semana</div>
+      <div class="card-value">{{ agendamentos_semana }}</div>
+      <div class="card-sub">esta semana</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Faturamento Semana</div>
+      <div class="card-value">R$ {{ total_semana }}</div>
+      <div class="card-sub">valor total da semana</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-header">📅 Calendário de Agendamentos</div>
+      <div class="panel-body">
+        <div id="calendar"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">🕐 Próximos Agendamentos</div>
+      <div class="panel-body">
+        {% for ag in proximos %}
+        <div class="prox-item">
+          <div class="prox-nome">{{ ag.cliente }}</div>
+          <div class="prox-info">{{ ag.get_tipo_servico_display }} · {{ ag.veiculo.modelo }}</div>
+          <div class="prox-info">{{ ag.destino }}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.2rem">
+            <span class="prox-data">{{ ag.data_hora|date:"d/m/Y H:i" }}</span>
+            <span class="badge badge-{{ ag.status }}">{{ ag.get_status_display }}</span>
+          </div>
+        </div>
+        {% empty %}
+        <p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">Nenhum agendamento futuro.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📊 Faturamento — Últimos 7 dias</div>
+    <div class="chart-wrap">
+      <canvas id="grafico"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      initialView: 'dayGridMonth',
+      locale: 'pt-br',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,listDay'
+      },
+      buttonText: {
+        today: 'Hoje',
+        month: 'Mês',
+        week: 'Semana',
+        list: 'Dia'
+      },
+      events: {{ eventos|safe }},
+      eventClick: function(info) {
+        alert(
+          '📋 ' + info.event.title +
+          '\n🕐 ' + info.event.start.toLocaleString('pt-BR')
+        );
+      },
+      dateClick: function(info) {
+        var evs = cal.getEvents().filter(function(e) {
+          return e.start.toDateString() === info.date.toDateString();
+        });
+        if (evs.length === 0) {
+          alert('Nenhum agendamento em ' + info.date.toLocaleDateString('pt-BR'));
+        } else {
+          var msg = '📅 ' + info.date.toLocaleDateString('pt-BR') + ':\n\n';
+          evs.forEach(function(e) {
+            msg += '• ' + e.title + ' — ' + e.start.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) + '\n';
+          });
+          alert(msg);
+        }
+      }
+    });
+    cal.render();
+
+    new Chart(document.getElementById('grafico'), {
+      type: 'bar',
+      data: {
+        labels: {{ labels|safe }},
+        datasets: [{
+          label: 'Faturamento (R$)',
+          data: {{ valores|safe }},
+          backgroundColor: '#b8935a',
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v } }
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>

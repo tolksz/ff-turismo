@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>OS #{{ agendamento.pk|stringformat:"04d" }} — Detalhe</title>
+  <style>
+    /* ── RESET ─────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── VARIÁVEIS ──────────────────────────────── */
+    :root {
+      --gold: #b8935a; --gold-pale: #f5efe6;
+      --ink: #2a2420; --muted: #7a6e68; --line: #e0d5c8; --bg: #faf8f5;
+    }
+
+    /* ── BODY ───────────────────────────────────── */
+    body { font-family: 'Segoe UI', sans-serif; background: #e8e0d8; min-height: 100vh; }
+
+    /* ── TOPBAR ─────────────────────────────────── */
+    .topbar { background: #2a2420; padding: .9rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar h1 { color: #b8935a; font-size: 1.1rem; letter-spacing: .05em; }
+    .topbar nav a { color: #ccc; text-decoration: none; font-size: .85rem; margin-left: 1.5rem; }
+    .topbar nav a:hover { color: #b8935a; }
+
+    /* ── CONTAINER ──────────────────────────────── */
+    .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+
+    /* ── CABEÇALHO DA OS ────────────────────────── */
+    .os-header {
+      background: white; border-radius: 8px; border: 1px solid var(--line);
+      padding: 1.2rem 1.5rem; margin-bottom: 1rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .os-titulo h2 { font-size: 1.1rem; color: var(--ink); }
+    .os-titulo p { font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+    .os-num { font-size: 2rem; font-weight: 700; color: var(--gold); }
+
+    /* ── BADGES ─────────────────────────────────── */
+    .badge { display: inline-block; font-size: .72rem; padding: .2rem .6rem; border-radius: 20px; font-weight: 500; margin-left: .4rem; }
+    .badge-pendente   { background: #fff3cd; color: #856404; }
+    .badge-confirmado { background: #d1e7dd; color: #0a5c36; }
+    .badge-concluido  { background: #cfe2ff; color: #084298; }
+    .badge-cancelado  { background: #f8d7da; color: #842029; }
+    .badge-pago       { background: #d1e7dd; color: #0a5c36; }
+    .badge-parcial    { background: #fff3cd; color: #856404; }
+
+    /* ── BOTÕES DE AÇÃO ─────────────────────────── */
+    .acoes { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+    .btn { display: inline-block; padding: .5rem 1.1rem; border-radius: 6px; font-size: .82rem; text-decoration: none; cursor: pointer; border: none; font-family: inherit; }
+    .btn-gold { background: var(--gold); color: white; }
+    .btn-dark { background: var(--ink); color: white; }
+    .btn-outline { background: white; color: var(--ink); border: 1px solid var(--line); }
+    .btn:hover { opacity: .85; }
+
+    /* ── GRID DE PAINÉIS ────────────────────────── */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .grid-full { grid-column: 1 / -1; }
+
+    /* ── PAINÉIS ────────────────────────────────── */
+    .panel { background: white; border-radius: 8px; border: 1px solid var(--line); overflow: hidden; }
+    .panel-header { background: var(--gold-pale); padding: .6rem 1.2rem; border-bottom: 1px solid var(--line); font-size: .78rem; font-weight: 600; color: var(--ink); }
+    .panel-body { padding: 1rem 1.2rem; }
+
+    /* ── CAMPOS DE INFO ─────────────────────────── */
+    .field-row { display: flex; justify-content: space-between; padding: .45rem 0; border-bottom: 1px solid var(--line); font-size: .85rem; }
+    .field-row:last-child { border-bottom: none; }
+    .field-row label { color: var(--muted); }
+    .field-row span { color: var(--ink); font-weight: 500; text-align: right; max-width: 60%; }
+
+    /* ── TABELA PASSAGEIROS ─────────────────────── */
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: .45rem .8rem; text-align: left; font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; color: var(--gold); border-bottom: 1px solid var(--line); }
+    td { padding: .5rem .8rem; font-size: .82rem; color: var(--ink); border-bottom: 1px solid var(--line); }
+    tr:last-child td { border-bottom: none; }
+
+    .tipo-badge { display: inline-block; font-size: .65rem; padding: .1rem .4rem; border-radius: 3px; }
+    .adulto      { background: #e8f4e8; color: #2a6e2a; }
+    .adolescente { background: #fff3e0; color: #8a5a00; }
+    .crianca     { background: #e8f0ff; color: #2a4a8a; }
+
+    /* ── OBSERVAÇÕES ────────────────────────────── */
+    .obs { background: var(--bg); border-radius: 4px; padding: .8rem; font-size: .85rem; color: var(--ink); min-height: 50px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── TOPBAR ── -->
+  <div class="topbar">
+    <h1>F&F Viagens e Turismo</h1>
+    <nav>
+      <a href="{% url 'agendamentos:dashboard' %}">Dashboard</a>
+      <a href="{% url 'agendamentos:lista' %}">Agendamentos</a>
+      <a href="/admin/">Admin</a>
+    </nav>
+  </div>
+
+  <div class="container">
+
+    <!-- ── CABEÇALHO DA OS ── -->
+    <div class="os-header">
+      <div class="os-titulo">
+        <h2>
+          {{ agendamento.get_tipo_servico_display }}
+          <span class="badge badge-{{ agendamento.status }}">{{ agendamento.get_status_display }}</span>
+          <span class="badge badge-{{ agendamento.pagamento }}">{{ agendamento.get_pagamento_display }}</span>
+        </h2>
+        <p>Criado em {{ agendamento.criado_em|date:"d/m/Y H:i" }}</p>
+      </div>
+      <div class="os-num">#{{ agendamento.pk|stringformat:"04d" }}</div>
+    </div>
+
+    <!-- ── BOTÕES DE AÇÃO ── -->
+    <div class="acoes">
+      <a href="{% url 'agendamentos:lista' %}" class="btn btn-outline">← Voltar</a>
+      <a href="{% url 'agendamentos:os_motorista' agendamento.pk %}" class="btn btn-dark">🖨️ OS Motorista</a>
+      <a href="{% url 'agendamentos:orcamento_turista' agendamento.pk %}" class="btn btn-gold">📄 Orçamento Cliente</a>
+    </div>
+
+    <!-- ── GRID PRINCIPAL ── -->
+    <div class="grid">
+
+      <!-- painel: cliente -->
+      <div class="panel">
+        <div class="panel-header">👤 Cliente</div>
+        <div class="panel-body">
+          <div class="field-row"><label>Nome</label><span>{{ agendamento.cliente }}</span></div>
+          <div class="field-row"><label>Telefone</label><span>{{ agendamento.cliente.telefone }}</span></div>
+          <div class="field-row"><label>E-mail</label><span>{{ agendamento.cliente.email|default:"—" }}</span></div>
+          <div class="field-row"><label>CPF</label><span>{{ agendamento.cliente.cpf|default:"—" }}</span></div>
+        </div>
+      </div>
+
+      <!-- painel: serviço -->
+      <div class="panel">
+        <div class="panel-header">🚌 Serviço</div>
+        <div class="panel-body">
+          <div class="field-row"><label>Tipo</label><span>{{ agendamento.get_tipo_servico_display }}</span></div>
+          <div class="field-row"><label>Data e Hora</label><span>{{ agendamento.data_hora|date:"d/m/Y H:i" }}</span></div>
+          <div class="field-row"><label>Embarque</label><span>{{ agendamento.endereco_embarque }}</span></div>
+          <div class="field-row"><label>Destino</label><span>{{ agendamento.destino }}</span></div>
+          <div class="field-row"><label>Voo</label><span>{{ agendamento.codigo_voo|default:"—" }}</span></div>
+          {% if agendamento.passeio %}
+          <div class="field-row"><label>Passeio</label><span>{{ agendamento.passeio }}</span></div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- painel: veículo e motorista -->
+      <div class="panel">
+        <div class="panel-header">🚗 Veículo e Motorista</div>
+        <div class="panel-body">
+          <div class="field-row"><label>Veículo</label><span>{{ agendamento.veiculo }}</span></div>
+          <div class="field-row"><label>Capacidade</label><span>{{ agendamento.veiculo.capacidade }} pessoas</span></div>
+          <div class="field-row"><label>Motorista</label><span>{{ agendamento.motorista }}</span></div>
+          <div class="field-row"><label>Telefone</label><span>{{ agendamento.motorista.telefone }}</span></div>
+        </div>
+      </div>
+
+      <!-- painel: financeiro -->
+      <div class="panel">
+        <div class="panel-header">💰 Financeiro</div>
+        <div class="panel-body">
+          <div class="field-row"><label>Valor Total</label><span>R$ {{ agendamento.valor_total }}</span></div>
+          <div class="field-row"><label>Sinal (20%)</label><span>R$ {{ agendamento.valor_sinal }}</span></div>
+          <div class="field-row"><label>Restante</label><span>R$ {{ agendamento.valor_restante }}</span></div>
+          <div class="field-row"><label>Pagamento</label><span class="badge badge-{{ agendamento.pagamento }}">{{ agendamento.get_pagamento_display }}</span></div>
+        </div>
+      </div>
+
+      <!-- painel: bagagem e passageiros (largura total) -->
+      <div class="panel grid-full">
+        <div class="panel-header">👥 Passageiros</div>
+        <div class="panel-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Documento</th>
+                <th>Telefone</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in passageiros %}
+              <tr>
+                <td>{{ p.nome }}</td>
+                <td><span class="tipo-badge {{ p.tipo }}">{{ p.get_tipo_display }}</span></td>
+                <td>{{ p.documento|default:"—" }}</td>
+                <td>{{ p.telefone|default:"—" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" style="color:var(--muted);text-align:center;padding:1rem">Nenhum passageiro cadastrado.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- painel: bagagem -->
+      <div class="panel">
+        <div class="panel-header">🧳 Bagagem</div>
+        <div class="panel-body">
+          <div class="field-row"><label>Despachadas</label><span>{{ agendamento.malas_despachadas }}</span></div>
+          <div class="field-row"><label>Mão</label><span>{{ agendamento.malas_mao }}</span></div>
+          <div class="field-row"><label>Reboque</label><span>{% if agendamento.reboque %}Sim{% else %}Não{% endif %}</span></div>
+        </div>
+      </div>
+
+      <!-- painel: observações -->
+      <div class="panel">
+        <div class="panel-header">📝 Observações</div>
+        <div class="panel-body">
+          <div class="obs">{{ agendamento.observacoes|default:"Nenhuma observação." }}</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- fim: grid -->
+
+  </div>
+  <!-- fim: container -->
+
+</body>
+</html>

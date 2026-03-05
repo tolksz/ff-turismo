@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Orçamento #{{ agendamento.pk|stringformat:"04d" }} — {{ agendamento.cliente }}</title>
+  <style>
+    /* ── RESET ─────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── VARIÁVEIS DE COR ──────────────────────── */
+    :root {
+      --gold: #b8935a; --gold-pale: #f5efe6;
+      --ink: #2a2420; --muted: #7a6e68; --line: #e0d5c8;
+    }
+
+    /* ── BODY / FUNDO ──────────────────────────── */
+    body { font-family: 'Segoe UI', sans-serif; background: #e8e0d8; padding: 2rem 1rem; }
+
+    /* ── PÁGINA PRINCIPAL ──────────────────────── */
+    .page { background: white; max-width: 780px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+
+    /* ── CABEÇALHO ─────────────────────────────── */
+    .header { padding: 1.5rem 2rem; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
+    .company h1 { font-size: 1.2rem; color: var(--ink); }
+    .company p { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+    .doc-info { text-align: right; }
+    .doc-info h2 { font-size: 1rem; color: var(--ink); }
+    .doc-info .os-num { font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+
+    /* ── BARRA DE TIPO DE SERVIÇO ──────────────── */
+    .service-bar { background: var(--gold); padding: .5rem 2rem; display: flex; justify-content: space-between; }
+    .service-bar span { color: white; font-size: .85rem; font-weight: 600; }
+
+    /* ── CORPO DO DOCUMENTO ────────────────────── */
+    .body { padding: 1.5rem 2rem; }
+
+    /* ── TÍTULO DE SEÇÃO ───────────────────────── */
+    .section-title {
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--gold); margin: 1.2rem 0 .6rem;
+      border-bottom: 1px solid var(--line); padding-bottom: .3rem;
+    }
+
+    /* ── GRID DE CAMPOS ────────────────────────── */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .field { background: var(--gold-pale); border-radius: 4px; padding: .5rem .8rem; }
+    .field label { font-size: .6rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: block; margin-bottom: .2rem; }
+    .field span { font-size: .88rem; color: var(--ink); font-weight: 500; }
+    .field-full { grid-column: 1 / -1; }
+
+    /* ── TABELA FINANCEIRA ─────────────────────── */
+    .financeiro { border: 2px solid var(--gold); border-radius: 6px; overflow: hidden; margin-top: .3rem; }
+    .fin-row { display: flex; justify-content: space-between; align-items: center; padding: .7rem 1.2rem; border-bottom: 1px solid var(--line); }
+    .fin-row:last-child { border-bottom: none; }
+    .fin-label { font-size: .82rem; color: var(--muted); }
+    .fin-value { font-size: .88rem; color: var(--ink); font-weight: 600; }
+    .fin-row.destaque { background: var(--gold-pale); }
+    .fin-row.destaque .fin-label { color: var(--ink); font-weight: 600; }
+    .fin-row.destaque .fin-value { font-size: 1.1rem; color: var(--gold); }
+
+    /* ── BADGE STATUS PAGAMENTO ────────────────── */
+    .status-pag { display: inline-block; padding: .3rem .8rem; border-radius: 20px; font-size: .78rem; font-weight: 600; }
+    .pendente { background: #fff3cd; color: #856404; }
+    .parcial  { background: #cfe2ff; color: #084298; }
+    .pago     { background: #d1e7dd; color: #0a5c36; }
+
+    /* ── CAIXA DE AVISOS (cancelamento / obs) ──── */
+    .cancelamento { background: #fff8f0; border: 1px solid #f0c080; border-radius: 6px; padding: 1rem 1.2rem; margin-top: .3rem; }
+    .cancelamento h4 { font-size: .78rem; color: var(--gold); margin-bottom: .5rem; text-transform: uppercase; letter-spacing: .05em; }
+    .cancelamento p { font-size: .8rem; color: var(--ink); line-height: 1.6; }
+
+    /* ── RODAPÉ DE CONTATO ─────────────────────── */
+    .footer-contato { background: var(--ink); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+    .footer-contato span { font-size: .75rem; }
+    .footer-contato strong { color: var(--gold); }
+
+    /* ── RODAPÉ FINAL ──────────────────────────── */
+    .footer { background: var(--gold-pale); border-top: 1px solid var(--line); padding: .6rem 2rem; display: flex; justify-content: space-between; }
+    .footer span { font-size: .65rem; color: var(--muted); }
+
+    /* ── BOTÕES (não aparecem na impressão) ─────── */
+    .no-print { text-align: center; margin-bottom: 1rem; }
+    .no-print button { background: var(--gold); color: white; border: none; padding: .6rem 1.4rem; border-radius: 6px; font-size: .85rem; cursor: pointer; margin: 0 .3rem; }
+    .no-print a { display: inline-block; background: #555; color: white; text-decoration: none; padding: .6rem 1.4rem; border-radius: 6px; font-size: .85rem; margin: 0 .3rem; }
+
+    /* ── ESTILOS DE IMPRESSÃO ───────────────────── */
+    @media print {
+      body { background: white; padding: 0; }
+      .page { box-shadow: none; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── BOTÕES FORA DA PÁGINA (não imprimem) ── -->
+  <div class="no-print">
+    <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <a href="{% url 'agendamentos:lista' %}">← Voltar</a>
+  </div>
+
+  <div class="page">
+
+    <!-- ── CABEÇALHO: EMPRESA + NÚMERO DO ORÇAMENTO ── -->
+    <div class="header">
+      <div class="company">
+        <h1>{{ empresa.nome }}</h1>
+        <p>CNPJ: {{ empresa.cnpj }} · {{ empresa.cidade }}</p>
+        <p>{{ empresa.telefone }} · {{ empresa.email }}</p>
+      </div>
+      <div class="doc-info">
+        <h2>Orçamento</h2>
+        <div class="os-num">#{{ agendamento.pk|stringformat:"04d" }}</div>
+      </div>
+    </div>
+
+    <!-- ── BARRA: TIPO DE SERVIÇO + DATA ── -->
+    <div class="service-bar">
+      <span>{{ agendamento.get_tipo_servico_display }}</span>
+      <span>{{ agendamento.data_hora|date:"d/m/Y H:i" }}</span>
+    </div>
+
+    <div class="body">
+
+      <!-- ── SEÇÃO: DADOS DO CLIENTE ── -->
+      <div class="section-title">Dados do Cliente</div>
+      <div class="grid2">
+        <div class="field field-full">
+          <label>Nome</label>
+          <span>{{ agendamento.cliente }}</span>
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <span>{{ agendamento.cliente.telefone }}</span>
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <span>{{ agendamento.cliente.email|default:"—" }}</span>
+        </div>
+      </div>
+      <!-- fim: dados do cliente -->
+
+      <!-- ── SEÇÃO: DETALHES DO SERVIÇO ── -->
+      <div class="section-title">Detalhes do Serviço</div>
+      <div class="grid2">
+        <div class="field field-full">
+          <label>Embarque</label>
+          <span>{{ agendamento.endereco_embarque }}</span>
+        </div>
+        <div class="field field-full">
+          <label>Destino</label>
+          <span>{{ agendamento.destino }}</span>
+        </div>
+        <div class="field">
+          <label>Data e Hora</label>
+          <span>{{ agendamento.data_hora|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="field">
+          <label>Passageiros</label>
+          <span>{{ agendamento.num_passageiros }} pessoa{{ agendamento.num_passageiros|pluralize }}</span>
+        </div>
+        <div class="field">
+          <label>Veículo</label>
+          <span>{{ agendamento.veiculo.modelo }}</span>
+        </div>
+        <!-- bagagem -->
+        <div class="field">
+          <label>Bagagem Despachada</label>
+          <span>{{ agendamento.malas_despachadas }}</span>
+        </div>
+        <div class="field">
+          <label>Bagagem de Mão</label>
+          <span>{{ agendamento.malas_mao }}</span>
+        </div>
+        <!-- reboque — só aparece se marcado -->
+        {% if agendamento.reboque %}
+        <div class="field">
+          <label>Apoio Reboque</label>
+          <span>Sim (+R$ 50,00)</span>
+        </div>
+        {% endif %}
+        <!-- passeio — só aparece para city tour -->
+        {% if agendamento.passeio %}
+        <div class="field">
+          <label>Passeio</label>
+          <span>{{ agendamento.passeio }}</span>
+        </div>
+        {% endif %}
+      </div>
+      <!-- fim: detalhes do serviço -->
+
+      <!-- ── SEÇÃO: FINANCEIRO ── -->
+      <div class="section-title">Financeiro</div>
+      <div class="financeiro">
+        <div class="fin-row">
+          <span class="fin-label">Valor Total</span>
+          <span class="fin-value">R$ {{ agendamento.valor_total }}</span>
+        </div>
+        <div class="fin-row">
+          <span class="fin-label">Sinal (20%) — a confirmar</span>
+          <span class="fin-value">R$ {{ agendamento.valor_sinal }}</span>
+        </div>
+        <div class="fin-row">
+          <span class="fin-label">Restante — a pagar no dia</span>
+          <span class="fin-value">R$ {{ agendamento.valor_restante }}</span>
+        </div>
+        <div class="fin-row">
+          <span class="fin-label">Forma de Pagamento</span>
+          <span class="fin-value">Dinheiro / PIX / Cartão</span>
+        </div>
+        <div class="fin-row destaque">
+          <span class="fin-label">Status do Pagamento</span>
+          <span class="fin-value">
+            <span class="status-pag {{ agendamento.pagamento }}">{{ agendamento.get_pagamento_display }}</span>
+          </span>
+        </div>
+      </div>
+      <!-- fim: financeiro -->
+
+      <!-- ── SEÇÃO: POLÍTICA DE CANCELAMENTO ── -->
+      <div class="section-title">Política de Cancelamento</div>
+      <div class="cancelamento">
+        <h4>⚠️ Informações Importantes</h4>
+        <p>
+          • O sinal de 20% é necessário para confirmar o agendamento.<br>
+          • Em caso de <strong>no-show</strong> (não comparecimento), o sinal será retido integralmente.<br>
+          • O valor retido poderá ser usado como crédito para um futuro agendamento.<br>
+          • Cancelamentos com aviso prévio serão analisados individualmente.<br>
+          • O valor restante deverá ser pago no dia do serviço.
+        </p>
+      </div>
+      <!-- fim: política de cancelamento -->
+
+      <!-- ── SEÇÃO: OBSERVAÇÕES E CLÁUSULAS ADICIONAIS ── -->
+      <div class="section-title">Observações e Cláusulas Adicionais</div>
+      <div class="cancelamento" style="min-height: 80px;">
+        <h4>📝 Condições Negociadas</h4>
+        <p>{{ agendamento.observacoes|default:"Nenhuma observação adicional." }}</p>
+      </div>
+      <!-- fim: observações -->
+
+    </div>
+    <!-- fim: body -->
+
+    <!-- ── RODAPÉ DE CONTATO ── -->
+    <div class="footer-contato">
+      <div>
+        <strong>{{ empresa.nome }}</strong><br>
+        <span>CNPJ: {{ empresa.cnpj }}</span>
+      </div>
+      <div style="text-align:right">
+        <span>{{ empresa.telefone }}</span><br>
+        <span>{{ empresa.email }}</span>
+      </div>
+    </div>
+
+    <!-- ── RODAPÉ FINAL ── -->
+    <div class="footer">
+      <span>Documento gerado em {% now "d/m/Y H:i" %}</span>
+      <span>Orçamento #{{ agendamento.pk|stringformat:"04d" }}</span>
+    </div>
+
+  </div>
+  <!-- fim: page -->
+
+</body>
+</html>

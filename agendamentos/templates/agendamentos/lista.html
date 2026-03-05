@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Agendamentos — F&F Turismo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #b8935a;
+      --gold-pale: #f5efe6;
+      --ink: #2a2420;
+      --muted: #7a6e68;
+      --line: #e0d5c8;
+      --bg: #faf8f5;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: #e8e0d8; min-height: 100vh; }
+
+    .topbar {
+      background: var(--ink);
+      padding: .9rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar h1 { color: var(--gold); font-size: 1.1rem; letter-spacing: .05em; }
+    .topbar span { color: #aaa; font-size: .8rem; }
+
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+
+    .filtros {
+      background: white;
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.2rem;
+      display: flex;
+      gap: .8rem;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      border: 1px solid var(--line);
+    }
+    .filtros input, .filtros select {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: .45rem .7rem;
+      font-size: .85rem;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .filtros button {
+      background: var(--gold);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: .45rem 1rem;
+      font-size: .85rem;
+      cursor: pointer;
+    }
+    .filtros a {
+      font-size: .8rem;
+      color: var(--muted);
+      text-decoration: none;
+      align-self: center;
+    }
+
+    .card {
+      background: white;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .card-header {
+      background: var(--gold-pale);
+      padding: .7rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .card-header span { font-size: .8rem; color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: .6rem 1rem;
+      text-align: left;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--gold);
+      border-bottom: 1px solid var(--line);
+    }
+    td {
+      padding: .7rem 1rem;
+      font-size: .85rem;
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+
+    .badge {
+      display: inline-block;
+      font-size: .68rem;
+      padding: .15rem .5rem;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .badge-pendente   { background: #fff3cd; color: #856404; }
+    .badge-confirmado { background: #d1e7dd; color: #0a5c36; }
+    .badge-concluido  { background: #cfe2ff; color: #084298; }
+    .badge-cancelado  { background: #f8d7da; color: #842029; }
+
+    .badge-pago    { background: #d1e7dd; color: #0a5c36; }
+    .badge-parcial { background: #fff3cd; color: #856404; }
+
+    .tipo { font-size: .75rem; color: var(--muted); }
+    .os-num { font-weight: 600; color: var(--gold); }
+
+    .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>F&F Viagens e Turismo</h1>
+  <span>Agendamentos</span>
+</div>
+
+<div class="container">
+
+  <!-- FILTROS -->
+  <form method="get" class="filtros">
+    <input type="text" name="q" placeholder="Cliente, destino ou voo..." value="{{ busca|default:'' }}">
+    <select name="status">
+      <option value="">Todos os status</option>
+      {% for val, label in status_choices %}
+        <option value="{{ val }}" {% if filtro_status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="tipo">
+      <option value="">Todos os tipos</option>
+      {% for val, label in tipo_choices %}
+        <option value="{{ val }}" {% if filtro_tipo == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filtrar</button>
+    <a href="{% url 'agendamentos:lista' %}">Limpar</a>
+  </form>
+
+  <!-- TABELA -->
+  <div class="card">
+    <div class="card-header">
+      <strong>{{ agendamentos.count }} agendamento{{ agendamentos.count|pluralize }}</strong>
+      <span>ordenados por data</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>OS</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Data</th>
+          <th>Destino</th>
+          <th>Veículo</th>
+          <th>Status</th>
+          <th>Pagamento</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ag in agendamentos %}
+        <tr>
+          <td class="os-num"><a href="{% url 'agendamentos:detalhe' ag.pk %}" style="color:var(--gold);text-decoration:none">#{{ ag.pk|stringformat:"04d" }}</a></td>
+          <td>{{ ag.cliente }}</td>
+          <td class="tipo">{{ ag.get_tipo_servico_display }}</td>
+          <td>{{ ag.data_hora|date:"d/m/Y H:i" }}</td>
+          <td>{{ ag.destino }}</td>
+          <td>{{ ag.veiculo }}</td>
+          <td><span class="badge badge-{{ ag.status }}">{{ ag.get_status_display }}</span></td>
+          <td><span class="badge badge-{{ ag.pagamento }}">{{ ag.get_pagamento_display }}</span></td>
+          <td>R$ {{ ag.valor_total }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="empty">Nenhum agendamento encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

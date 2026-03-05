@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+     # apps do projeto
+    'clientes',
+    'veiculos',
+    'motoristas',
+    'passeios',
+    'agendamentos',
 ]
 
 MIDDLEWARE = [
@@ -115,3 +121,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+EMPRESA = {
+    'nome': 'F&F Viagens e Turismo',
+    'cnpj': '00.000.000/0001-00',
+    'telefone': '(51) 99999-9999',
+    'email': 'contato@ffturismo.com.br',
+    'cidade': 'Porto Alegre, RS',
+}
